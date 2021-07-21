@@ -25,17 +25,13 @@
 
 #include "objects.hpp"
 
-#ifdef _MSC_VER
-#define CM2IN (.01 / GSL_CONST_MKSA_INCH) // This is not good, but works
-#define in2cm ( GSL_CONST_MKSA_INCH * 100)
-#define DPI 72.0 //in dpi;
-#define RESOL 1000.0
-#else
+
   static const float CM2IN = .01 / GSL_CONST_MKSA_INCH;
   static const float in2cm = GSL_CONST_MKSA_INCH*100;
   static const PLFLT DPI = 72.0 ; //in dpi;
+  static const PLFLT DPICM = 72.0/2.54 ; //dpi/cm;
   static const float RESOL = 1000.0;
-#endif
+  static const PLFLT PlplotInternalPageRatioXoverY=4./3.; //Some machines do not know PRIVATE values stored in plplotP.h 4/3=PlplotInternalPageRatioXoverY=float(PIXELS_X)/float(PIXELS_Y)
 
 class DevicePS: public GraphicsDevice
 {
@@ -72,28 +68,32 @@ class DevicePS: public GraphicsDevice
     // AC 29-Avril-2013: the way I found to link GDLPSStream* and GDLStream*
     DLong lun=GetLUN();
     psUnit = &fileUnits[ lun-1];
-    psUnit->Open(fileName,fstream::out,false,false,false,
-		 defaultStreamWidth,false,false);
+    psUnit->Open(fileName,fstream::out,false,false,false,defaultStreamWidth,false,false);
     (*static_cast<DLongGDL*>( dStruct->GetTag(dStruct->Desc()->TagIndex("UNIT"))))[0]=lun;
 
     // zeroing offsets (xleng and yleng are the default ones but they need to be specified 
-    // for the offsets to be taken into account by spage(), works with plplot >= 5.9.9)    
-    actStream->spage(DPI, DPI, 540, 720, 0, 0); //plplot default: portrait!
+    // for the offsets to be taken into account by spage(), works with plplot >= 5.9.9)
+    PLINT XSIZE=ceil(XPageSize*DPICM);
+    PLINT YSIZE=ceil(YPageSize*DPICM);
+    PLINT XOFF=ceil(XOffset*DPICM);
+    PLINT YOFF=ceil(YOffset*DPICM);
 
     // as setting the offsets and sizes with plPlot is (extremely) tricky, and some of these setting
     // are hardcoded into plplot (like EPS header, and offsets in older versions of plplot)
     // here we play only with the aspect ratio 
-    
-    // patch 3611949 by Joanna, 29 Avril 2013
-    PLFLT pageRatio=XPageSize/YPageSize;
-    std::string as = i2s( pageRatio);
-    actStream->setopt( "a", as.c_str());
-    
+
     // plot orientation
     //std::cout  << "orientation : " << orient_portrait<< '\n';
-    
-    actStream->sdiori(orient_portrait ? 1 : 2);
-    
+    if (orient_portrait) { //X size will be OK, Y size must be scaled 
+     actStream->setopt( "portrait",NULL);
+     actStream->sdidev( PL_NOTSET, PlplotInternalPageRatioXoverY, PL_NOTSET, PL_NOTSET ); //only OK if page ratio is 540x720 
+     actStream->spage(DPI, DPI, XSIZE, YSIZE, YOFF, XOFF);
+
+    } else {
+     actStream->spage(DPI, DPI, YSIZE, XSIZE, YOFF-YSIZE, XOFF); //invert axes, displace as does IDL..
+     actStream->sdiori(2);
+    }
+
     // no pause on destruction
     actStream->spause( false);
 
@@ -105,8 +105,10 @@ class DevicePS: public GraphicsDevice
     actStream->SetColorMap0( r, g, b, ctSize);
     actStream->SetColorMap1( r, g, b, ctSize);
     // default: black+white (IDL behaviour)
+    //force TTF fonts as scaling of hershey fonts will not be good 
     short font=((int)SysVar::GetPFont()>-1)?1:0;
-    string what="text="+i2s(font)+",color="+i2s(color);
+//    string what="text="+i2s(font)+",color="+i2s(color);
+    string what="text=1,color="+i2s(color);
     actStream->setopt( "drvopt",what.c_str());
     actStream->scolbg(255,255,255); // start with a white background
 
@@ -120,22 +122,6 @@ class DevicePS: public GraphicsDevice
     actStream->vpor(0,1,0,1);
     actStream->wind(0,1,0,1);
     actStream->DefaultCharSize();
-   //in case these are not initalized, here is a good place to do it.
-//    if (actStream->updatePageInfo()==true)
-//    {
-//        actStream->GetPlplotDefaultCharSize(); //initializes everything in fact..
-//
-//    }
-//    PLFLT xp, yp;
-//    PLINT xleng, yleng, xoff, yoff;
-//    actStream->gpage(xp, yp, xleng, yleng, xoff, yoff);
-//    // to mimic IDL we must scale char so that the A4 charsize is constant whatever the size of the plot
-//    PLFLT size = (XPageSize>YPageSize)?XPageSize:YPageSize;
-//    PLFLT refsize= (xleng/xp>yleng/yp)?xleng/xp:yleng/yp;
-//    PLFLT charScale=(refsize*in2cm)/size;
-//    PLFLT defhmm, scalhmm;
-//    plgchr(&defhmm, &scalhmm); // height of a letter in millimetres
-//    actStream->RenewPlplotDefaultCharsize(defhmm * charScale);
   }
     
 private:
@@ -258,7 +244,7 @@ private:
 
 public:
   DevicePS(): GraphicsDevice(), fileName( "gdl.ps"), actStream( NULL),
-    XPageSize(17.78), YPageSize(12.7), XOffset(0.75),YOffset(5.0),
+    XPageSize(17.78), YPageSize(12.7), XOffset(1.905),YOffset(12.7),  //IDL default for offests: 54 pts /X and 360 pts/Y
     color(0), decomposed( 0), encapsulated(false), scale(1.), orient_portrait(true), bitsPerPix(8)
   {
     name = "PS";
@@ -324,7 +310,8 @@ public:
 
       delete actStream;
       actStream = NULL;
-      if (encapsulated) epsHacks(); // needs to be called after the plPlot-generated file is closed
+      //always : if (encapsulated) 
+       epsHacks(); // needs to be called after the plPlot-generated file is closed
     }
     return true;
   }

@@ -169,3 +169,19 @@ bool GDLPSStream::PaintImage(unsigned char *idata, PLINT nx, PLINT ny, DLong *po
 #undef LINEWIDTH
 }
 
+//special DefaultCharZise() to compensate a (plplot?) problem in reporting size of TT fonts: rescale by ~1.8 seems OK.
+void GDLPSStream::DefaultCharSize() {
+      DStructGDL* d = SysVar::D();
+  DStructDesc* s = d->Desc();
+  int X_CH_SIZE = s->TagIndex("X_CH_SIZE");
+  int Y_CH_SIZE = s->TagIndex("Y_CH_SIZE");
+  int X_PX_CM = s->TagIndex("X_PX_CM");
+  int Y_PX_CM = s->TagIndex("Y_PX_CM");
+  DLong chx = (*static_cast<DLongGDL*> (d->GetTag(X_CH_SIZE, 0)))[0];
+  DLong chy = (*static_cast<DLongGDL*> (d->GetTag(Y_CH_SIZE, 0)))[0];
+  DFloat xpxcm = (*static_cast<DFloatGDL*> (d->GetTag(X_PX_CM, 0)))[0];
+  DFloat ypxcm = (*static_cast<DFloatGDL*> (d->GetTag(Y_PX_CM, 0)))[0];
+  DFloat xchsizemm = GetPlplotFudge() * chx * CM_IN_MM / xpxcm;
+  DFloat linespacingmm = GetPlplotFudge() * chy * CM_IN_MM / ypxcm;
+  schr(xchsizemm, 1.0, linespacingmm);
+}

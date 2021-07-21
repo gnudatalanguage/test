@@ -684,7 +684,7 @@ public:
   void SetColorMap1Table(PLINT tableSize, BaseGDL *passed_colors, DLong decomposed=0);
   //if create a colormap1 with a black to white ramp.
   void SetColorMap1Ramp(DLong decomposed=0, PLFLT minlight=0.0);
-  void DefaultCharSize();
+  virtual void DefaultCharSize();
   void NextPlot( bool erase=true); // handles multi plots
 
   void NoSub(); // no subwindows (/NORM, /DEVICE)
