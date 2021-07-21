@@ -37,7 +37,7 @@ if [ ${BUILD_OS} == "Windows" ]; then
     BSDXDR_URL="https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/bsd-xdr/bsd-xdr-1.0.0.tar.gz"
     MSYS2_PACKAGES=(
         readline zlib libpng gsl wxWidgets plplot libgd libtiff libgeotiff netcdf hdf4 hdf5 fftw proj msmpi udunits
-        eigen3 eccodes glpk shapelib expat openssl
+        eigen3 eccodes glpk shapelib expat openssl qhull
     )
     MSYS2_PACKAGES_REBUILD=(
         graphicsmagick
@@ -66,7 +66,7 @@ elif [ ${BUILD_OS} == "Linux" ]; then
 elif [ ${BUILD_OS} == "macOS" ]; then
     BREW_PACKAGES=(
         llvm libomp ncurses readline zlib libpng gsl wxmac graphicsmagick libtiff libgeotiff netcdf hdf5 fftw proj open-mpi python numpy udunits eigen
-        eccodes glpk shapelib expat gcc@10
+        eccodes glpk shapelib expat gcc@10 qhull
     ) # JP 2021 Mar 21: HDF4 isn't available - not so critical I guess
       # JP 2021 May 25: Added GCC 10 which includes libgfortran, which the numpy tap relies on.
 else

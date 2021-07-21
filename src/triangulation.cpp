@@ -1358,21 +1358,5 @@ namespace lib {
   void grid_input(EnvT* e) {
     e->Throw("Writing in progress.");
   }
-
-//to be written and do not forget to uncomment QHULL in CMakeLists and config.h.cmake  
-  // see http://www.geom.umn.edu/software/qhull/. Used also with plplot.
-#ifdef HAVE_QHULL
-  void qhull ( EnvT* e)
-  {
-    e->Throw("Please Write this function in GDL.");
-  }
-
-
-  BaseGDL* qgrid3_fun ( EnvT* e)
-  {
-    e->Throw("Please Write this function in GDL.");
-    return NULL;
-  }
-#endif  
-  }
+}
 

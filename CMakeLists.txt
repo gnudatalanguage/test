@@ -7,7 +7,19 @@
 #  (at your option) any later version.
 #
 
-cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
+
+# requirement for CMAKE_CXX_STANDARD (3.2 for Apple, 3.1 for non-Apple: https://public.kitware.com/Bug/bug_relationship_graph.php?bug_id=15355)
+if (${CMAKE_VERSION} VERSION_LESS "3.2")
+  string(FIND "${CMAKE_CXX_FLAGS}" "-std=c++11" tmp)
+  if(tmp LESS 0)
+    message(FATAL_ERROR "please upgrade CMake to a version 3.2 or higher OR rerun cmake with -DCMAKE_CXX_FLAGS=\"-std=c++11\"")
+  endif()
+else()
+  set(CMAKE_CXX_STANDARD 11)
+endif()
+
+cmake_policy(SET CMP0026 OLD) # LOCATION property
 
 project(GDL)
 set(CMAKE_CXX_STANDARD 11)
@@ -70,8 +82,8 @@ set(PNGLIBDIR "" CACHE PATH "GDL: Specify the libpng directory tree")
 set(GRIB ON CACHE BOOL "GDL: Enable GRIB ?")
 set(GRIBDIR "" CACHE PATH "GDL: Specify the ECMWF ecCodes directory tree")
 
-# set(QHULL OFF CACHE BOOL "GDL: Enable Qhull ?")
-# set(QHULLDIR "" CACHE PATH "GDL: Specify the QHULL directory tree")
+set(QHULL ON CACHE BOOL "GDL: Enable Qhull ?")
+set(QHULLDIR "" CACHE PATH "GDL: Specify the QHULL directory tree")
 
 set(GLPK ON CACHE BOOL "GDL: Enable GLPK (for function SIMPLEX) ?")
 set(GLPKDIR "" CACHE PATH "GDL: Specify the GLPK directory tree")
@@ -513,14 +525,11 @@ if(PLPLOT_FOUND)
       "
       #include <plplot/plplot.h>
       #include<string.h>
-      #include <stdio.h>
       int main(int argc, char **argv) {
       int numdevs = 128;
       const char **devlongnames = (const char**) malloc(numdevs * sizeof (char*));
       const char **devnames = (const char**) malloc(numdevs * sizeof (char*));
       plgDevs(&devlongnames, &devnames, &numdevs);
-      fprintf(stderr,\"PLPLOT Devices Found: \");
-      for (int i = 0; i < numdevs; ++i) {fprintf(stderr,\" - %s \", devnames[i]);}
       for (int i = 0; i < numdevs; ++i) {if (strcmp(\"wxwidgets\", devnames[i])==0) exit(EXIT_SUCCESS);}
       exit(EXIT_FAILURE);
       }
@@ -844,7 +853,6 @@ if(MPI)
 		set(LIBRARIES ${LIBRARIES} ${MPI_LIBRARIES})
 	else(MPI_FOUND)
 		message(FATAL_ERROR "MPI is required but was not found.\n"
-		"(on Fedora, running `module load mpi` is required prior to run CMake)\n"
 		"Use -DMPIDIR=DIR to specify the MPI directory tree.\n"
 		"Use -DMPI=OFF to not use it.")
 	endif(MPI_FOUND)	
@@ -976,24 +984,24 @@ if(GRIB)
     endif(GRIB_FOUND)
 endif(GRIB)
 
-# QHULL IS NOT NEEDED YET!
-# # Qhull (enable TRIANGULATE and QHULL commands)
-# # -DQHULL=ON|OFF
-# # -DQHULLDIR=DIR
-# if(QHULL)
-#   set(CMAKE_PREFIX_PATH ${QHULLDIR})
-#   find_package(QHULL QUIET)
-#   set(PL_HAVE_QHULL ${QHULL_FOUND})
-#   if(QHULL_FOUND)
-#       set(LIBRARIES ${LIBRARIES} ${QHULL_LIBRARIES})
-#       include_directories(${QHULL_INCLUDE_DIR})
-#   else(QHULL_FOUND)
-#       message(FATAL_ERROR "QHULL is required but was not found.\n"
-#       "Use -DQHULLDIR=DIR to specify the QHULL directory tree.\n"
-#       "Use -DQHULL=OFF to not use it.\n"
-#                 "(suitable Fedora/CentOS package libqhull-devel)")
-#   endif(QHULL_FOUND)
-# endif(QHULL)
+# Qhull (enable TRIANGULATE and QHULL commands)
+# -DQHULL=ON|OFF
+# -DQHULLDIR=DIR
+if(QHULL)
+  set(CMAKE_PREFIX_PATH ${QHULLDIR})
+  find_package(QHULL QUIET)
+  set(HAVE_QHULL ${QHULL_FOUND})
+  if(QHULL_FOUND)
+      set(LIBRARIES ${LIBRARIES} ${QHULL_LIBRARIES})
+      include_directories(${QHULL_INCLUDE_DIR})
+  else(QHULL_FOUND)
+      message(FATAL_ERROR "QHULL is required but was not found.\n"
+      "Use -DQHULLDIR=DIR to specify the QHULL directory tree.\n"
+      "Use -DQHULL=OFF to not use it.\n"
+                "(suitable Fedora/CentOS package libqhull-devel)")
+  endif(QHULL_FOUND)
+endif(QHULL)
+
 
 # GLPK for Simplex ( Linear programming )
 # GLPK (enable SIMPLEX command)
@@ -1168,8 +1176,7 @@ module(PYTHON    Python    "Python        ")
 module(UDUNITS2  UDUNITS2  "UDUNITS-2     ")
 module(EIGEN3    EIGEN3    "EIGEN3        ")
 module(GRIB      GRIB      "GRIB          ")
-# set(QHULL_LIBRARIES ${QHULL_LIBRARIES})
-# module(QHULL     "QHULL         ")
+module(QHULL     QHULL     "QHULL         ")
 module(GLPK      GLPK      "GLPK          ")
 module(SHAPELIB  SHAPELIB  "SHAPELIB      ")
 module(EXPAT     EXPAT     "EXPAT         ")

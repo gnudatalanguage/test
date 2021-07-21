@@ -1,8 +1,8 @@
 /***************************************************************************
-                          triangulation.hpp  -  GDL header
+                          qhull.hpp  -  GDL header
                              -------------------
-    begin                : Aug 30 2017
-    copyright            : (C) 2017 by Gilles Duvert
+    begin                : Jun 09 2021
+    copyright            : (C) 2021 by Eloi R. de Linage
 
 ***************************************************************************/
 
@@ -19,15 +19,20 @@
  #include <config.h>
 #endif
 
-
-#ifndef TRIANGULATION_HPP_
-#define TRIANGULATION_HPP_
+#ifndef QHULL_HPP_
+#define QHULL_HPP_
 
 #include "datatypes.hpp"
 #include "envt.hpp"
+
+#include <iostream>
+#include <complex>
+#include <cmath>
+#include <cstdio>
+#include <vector>
+
 namespace lib {
-  void GDL_Triangulate(EnvT* e);
-  BaseGDL* trigrid_fun( EnvT* e);
-  void grid_input (EnvT* e);
+  void qhull ( EnvT* e);
+  BaseGDL* qgrid3_fun ( EnvT* e);
 }
 #endif

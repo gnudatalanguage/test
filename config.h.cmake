@@ -30,6 +30,7 @@
 #cmakedefine HAVE_PLPLOT_WIDTH 1
 #cmakedefine PLPLOT_PRIVATE_NOT_HIDDEN 1
 #cmakedefine PLPLOT_HAS_PLCALLBACK
+#cmakedefine HAVE_QHULL 1
 #define _WCHAR_H_CPLUSPLUS_98_CONFORMANCE_ 1
 
 #ifndef HAVE_STDINT_H
